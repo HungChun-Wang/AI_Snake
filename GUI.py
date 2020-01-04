@@ -8,6 +8,7 @@ from pygame.locals import K_LEFT
 from pygame.locals import K_RIGHT
 from pygame.locals import KEYDOWN
 from pygame.locals import QUIT
+from pygame.locals import K_RETURN
 from Referee import CReferee
 from Referee import EGameState
 
@@ -33,40 +34,26 @@ class CGUI:
         self.__referee = CReferee( Screen_Width / Unit_Size, Screen_Height / Unit_Size )
 
     def start( self ):
-        # game start
-        self.__referee.start()
-
         while True:
-            # receive keyboard instruction
-            self.__keyInstruct()
-
-            # do process which have to run every tick
-            self.__referee.roundTask()
-
-            # get state of game
-            gameState = self.__referee.getGameState()
-
-            # exit program when game over
-            if gameState == EGameState.over:
-                break 
-
-            # reflash background color
-            self.__screen.fill( Background_Color )
-
-            # print total number of eaten food
-            font = pygame.font.Font( None, 18 )
-            self.__screen.blit( font.render( f"Food: { self.__referee.getFoodNum() }" \
-                                , True, White_Color ), ( 450, 10 ) )
-            self.__screen.blit( font.render( f"Step: { self.__referee.getSnakeStepAcc() }" \
-                                , True, White_Color ), ( 450, 30 ) )
-
-            # draw snake and food
-            self.__drawSnake()
-            self.__drawFood()
-            pygame.display.update()
+            # wait start key
+            self.__startKeyInstruct()
 
             # wait for time interval
             time.sleep( 0.05 )
+
+            # run game except game over
+            while self.__referee.getGameState() == EGameState.running:
+                # receive keyboard instruction
+                self.__ctrlKeyInstruct()
+
+                # do process which have to run every tick
+                self.__referee.roundTask()
+
+                # print all element and update screen
+                self.printScreen()
+
+                # wait for time interval
+                time.sleep( 0.05 )
 
     # draw snake on window
     def __drawSnake( self ):
@@ -86,16 +73,27 @@ class CGUI:
                         ( foodPos.x * Unit_Size, foodPos.y * Unit_Size, \
                             Unit_Size, Unit_Size ) )
 
-
     # deal with keyboard instruction
-    def __keyInstruct( self ):
-        # receive keyboard event
+    def __startKeyInstruct( self ):
         for event in pygame.event.get():
             # exit game
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
                 return
+
+            # key buttom from up to down
+            if event.type != KEYDOWN:
+                return
+
+            # set move direction accroding to key
+            if event.key == K_RETURN:
+                self.__referee.start()
+
+    # deal with keyboard instruction
+    def __ctrlKeyInstruct( self ):
+        # receive keyboard event
+        for event in pygame.event.get():
 
             # key buttom from up to down
             if event.type != KEYDOWN:
@@ -110,3 +108,20 @@ class CGUI:
                 self.__referee.setSnakeMoveDir( direction.left )
             elif event.key == K_RIGHT:
                 self.__referee.setSnakeMoveDir( direction.right )
+
+    # print all element and update screen
+    def printScreen( self ):
+        # reflash background color
+        self.__screen.fill( Background_Color )
+
+        # print total number of eaten food
+        font = pygame.font.Font( None, 18 )
+        self.__screen.blit( font.render( f"Food: { self.__referee.getFoodNum() }" \
+                            , True, White_Color ), ( 450, 10 ) )
+        self.__screen.blit( font.render( f"Step: { self.__referee.getSnakeStepAcc() }" \
+                            , True, White_Color ), ( 450, 30 ) )
+
+        # draw snake and food
+        self.__drawSnake()
+        self.__drawFood()
+        pygame.display.update()

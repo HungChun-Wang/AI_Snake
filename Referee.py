@@ -38,6 +38,9 @@ class CReferee:
         # configure food
         self.createFood()
 
+        # switch game state to running
+        self.__gameState = EGameState.running
+
     # create food without overlapping
     def createFood( self ):
         # get snake body list

@@ -15,6 +15,7 @@ from Referee import EGameState
 Screen_Width = 600
 Screen_Height = 480
 Unit_Size = 5
+Time_Interval = 0.05
 White_Color = pygame.Color( 255, 255, 255 )
 Red_Color = pygame.Color( 255, 0, 0 )
 Background_Color = pygame.Color( 40, 40, 60 )
@@ -42,7 +43,7 @@ class CGUI:
             self.__startKeyInstruct()
 
             # wait for time interval
-            time.sleep( 0.05 )
+            time.sleep( Time_Interval )
 
             # run game except game over
             while self.__referee.getGameState() == EGameState.running:
@@ -56,7 +57,7 @@ class CGUI:
                 self.printGamingScreen()
 
                 # wait for time interval
-                time.sleep( 0.05 )
+                time.sleep( Time_Interval )
 
     # draw snake on window
     def __drawSnake( self ):
@@ -114,7 +115,6 @@ class CGUI:
 
     # print beginning screen
     def printInitScreen( self ):
-
         # print message in center of screen
         font = pygame.font.Font( None, 72 )
         content = "Press Enter"

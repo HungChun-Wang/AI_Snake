@@ -35,6 +35,9 @@ class CGUI:
 
     def start( self ):
         while True:
+            # print start scrrean
+            self.printInitScreen()
+
             # wait start key
             self.__startKeyInstruct()
 
@@ -50,7 +53,7 @@ class CGUI:
                 self.__referee.roundTask()
 
                 # print all element and update screen
-                self.printScreen()
+                self.printGamingScreen()
 
                 # wait for time interval
                 time.sleep( 0.05 )
@@ -109,8 +112,20 @@ class CGUI:
             elif event.key == K_RIGHT:
                 self.__referee.setSnakeMoveDir( direction.right )
 
+    def printInitScreen( self ):
+
+        # print message in center of screen
+        font = pygame.font.Font( None, 72 )
+        content = "Press Enter"
+        fWidth, fHeight = font.size( content )
+        self.__screen.blit( font.render( content, True, White_Color ) \
+                        , ( ( Screen_Width - fWidth ) / 2, ( Screen_Height - fHeight ) / 2 ) )
+
+        # update scrren
+        pygame.display.update()
+
     # print all element and update screen
-    def printScreen( self ):
+    def printGamingScreen( self ):
         # reflash background color
         self.__screen.fill( Background_Color )
 
@@ -124,4 +139,6 @@ class CGUI:
         # draw snake and food
         self.__drawSnake()
         self.__drawFood()
+
+        # update scrren
         pygame.display.update()

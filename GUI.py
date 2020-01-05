@@ -104,7 +104,7 @@ class CGUI:
 
         print([corDifferenceToWall_lst, corDifferenceToFood_lst, corDifferenceToBody])
 
-        return [corDistanceToWall_lst, corDistanceToFood_lst, corDistanceToBody]
+        return [corDifferenceToWall_lst, corDifferenceToFood_lst, corDifferenceToBody]
 
     # draw snake on window
     def __drawSnake( self ):

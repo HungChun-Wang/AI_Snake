@@ -79,6 +79,14 @@ class CReferee:
     def setSnakeMoveDir( self, dir ):
         self.__snake.setMoveDir( dir )
 
+    # get Snake head pos
+    def getSnakeHeadPos( self ):
+        return self.__snake.getHeadPos()
+
+    # get Snake head pos
+    def getWallBoundary( self ):
+        return self.__wall.getBoundary()
+
     # get whole body list of snake
     def getSnakeBody( self ):
         return self.__snake.getBodyPos()

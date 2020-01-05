@@ -14,7 +14,7 @@ from Referee import EGameState
 
 Screen_Width = 600
 Screen_Height = 480
-Unit_Size = 5
+Unit_Size = 10
 Time_Interval = 0.05
 White_Color = pygame.Color( 255, 255, 255 )
 Red_Color = pygame.Color( 255, 0, 0 )

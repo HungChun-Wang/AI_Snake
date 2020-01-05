@@ -38,6 +38,9 @@ class CReferee:
         # configure food
         self.createFood()
 
+        # clean food number
+        self.__foodNum = 0
+
         # switch game state to running
         self.__gameState = EGameState.running
 

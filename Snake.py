@@ -22,6 +22,9 @@ class CSnake:
         # move direction
         self.__moveDir = direction.none
 
+        # step number of single round
+        self.__roundStep = 0
+
         # accumulated step number
         self.__stepAcc = 0
 
@@ -41,6 +44,10 @@ class CSnake:
     def getBodyLength( self ):
         return self.__bodyLength
     
+    # get step number of single round
+    def getRoundStep( self ):
+        return self.__roundStep
+
     # get accumulated step number
     def getStepAcc( self ):
         return self.__stepAcc
@@ -61,6 +68,9 @@ class CSnake:
 
         # increase body length
         self.__bodyLength = self.__bodyLength + 1
+
+        # clean round step
+        self.__roundStep = 0
 
     # snake move front
     def move( self ):
@@ -91,6 +101,7 @@ class CSnake:
 
         # accumulate step
         self.__stepAcc = self.__stepAcc + 1
+        self.__roundStep = self.__roundStep + 1
 
     # whether snake bite itself
     def isBite( self ):

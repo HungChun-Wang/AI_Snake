@@ -5,6 +5,8 @@ from Snake import CSnake
 from Food import CFood
 from Wall import CWall
 from Wall import TBoundary
+from DataRecorder import CDataRecorder
+from DataRecorder import TOrientalDist
 
 # game state type
 class EGameState( Enum ):
@@ -29,6 +31,9 @@ class CReferee:
 
         # state of game
         self.__gameState = EGameState.ready
+
+        # record data
+        self.__dataRecorder = CDataRecorder()
 
     # start game
     def start( self ):
@@ -128,8 +133,21 @@ class CReferee:
         
         # game over when snake bite itself
         if self.__snake.isBite() or self.IsSnakeCrash():
-             self.__gameState = EGameState.over
-             return
+
+            # calculate distance to closed barrier in four orientaion
+            minDistToBarrier = self.calcMinDistToBarrier( self.__snake.getBodyPos(), \
+                        self.__snake.getBodyLength(), self.__wall.getBoundary() )
+            
+            # calculate coordinate different between snake head and food
+            coorDiffToFood = self.calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
+            
+            # write data to file
+            self.__dataRecorder.writeData( minDistToBarrier, coorDiffToFood, \
+                        self.__snake.getRoundStep(), self.__snake.getStepAcc() )
+            
+            # switch game state to over
+            self.__gameState = EGameState.over
+            return
 
         # end one round when snake get food
         if self.isSnakeEating():
@@ -140,4 +158,45 @@ class CReferee:
             self.createFood()
             return
 
+    # calculate distance to closed barrier in four orientaion
+    def calcMinDistToBarrier( self, snakeBody, snakeLength, wallBoundary ):
+        # init list
+        upperList = [ wallBoundary.upper - snakeBody[ snakeLength - 1 ].y + 1 ]
+        lowerList = [ snakeBody[ snakeLength - 1 ].y - wallBoundary.lower + 1 ]
+        leftList = [ snakeBody[ snakeLength - 1 ].x - wallBoundary.left + 1 ]
+        rightList = [ wallBoundary.right - snakeBody[ snakeLength - 1 ].x + 1 ]
 
+        # traversal body list to find minimum distance of four orientation
+        for i in range( snakeLength - 1 ):
+            if( snakeBody[ snakeLength - 1 ].x == snakeBody[ i ].x ):
+                # find upper-closet body
+                if( snakeBody[ snakeLength - 1 ].y < snakeBody[ i ].y ):
+                    upperList.append( snakeBody[ i ].y - snakeBody[ snakeLength - 1 ].y )
+
+                # find lower-closet body
+                elif( snakeBody[ snakeLength - 1 ].y > snakeBody[ i ].y ):
+                    lowerList.append( snakeBody[ snakeLength - 1 ].y - snakeBody[ i ].y )
+                
+                # exception
+                else:
+                    assert( False )
+            
+            if( snakeBody[ snakeLength - 1 ].y == snakeBody[ i ].y ):
+                # find left-closet body
+                if( snakeBody[ snakeLength - 1 ].x > snakeBody[ i ].x ):
+                    leftList.append( snakeBody[ i ].x - snakeBody[ snakeLength - 1 ].x )
+
+                # find right-closet body
+                elif( snakeBody[ snakeLength - 1 ].x < snakeBody[ i ].x ):
+                    rightList.append( snakeBody[ snakeLength - 1 ].x - snakeBody[ i ].x )
+
+                # exception
+                else:
+                    assert( False )
+    
+        return TOrientalDist( min( upperList ), min( lowerList ), min( leftList ), min( rightList ) )
+
+    # calculate coordinate different between snake head and food
+    def calcCoorDiffToFood( self, snakeHead, foodPos ):
+        coorDiff = TCoor( snakeHead.x - foodPos.x, snakeHead.y - foodPos.y )
+        return coorDiff

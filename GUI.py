@@ -66,12 +66,12 @@ class CGUI:
         wallBoundary = self.__referee.getWallBoundary()
         FoodPos = self.__referee.getFoodPos()
 
-        corDistanceToWall_lst = [snakeHeadPos.y-wallBoundary.lower, 
+        corDifferenceToWall_lst = [snakeHeadPos.y-wallBoundary.lower, 
                               wallBoundary.upper-snakeHeadPos.y+1, 
                               snakeHeadPos.x+1-wallBoundary.left, 
                               wallBoundary.right-snakeHeadPos.x+1]
 
-        corDistanceToFood_lst = [snakeHeadPos.x-FoodPos.x, snakeHeadPos.y-FoodPos.y]
+        corDifferenceToFood_lst = [snakeHeadPos.x-FoodPos.x, snakeHeadPos.y-FoodPos.y]
 
         if len(snakeBodyPos)>1:
             upper_dist_lst = [snakeHeadPos.y - i.y for i in snakeBodyPos[0:-1] if snakeHeadPos.y - i.y >= 0 and snakeHeadPos.x == i.x]
@@ -98,11 +98,11 @@ class CGUI:
             else:
                 right_dist = 0
 
-            corDistanceToBody = [upper_dist, lower_dist, left_dist, right_dist]
+            corDifferenceToBody = [upper_dist, lower_dist, left_dist, right_dist]
         else:
-            corDistanceToBody= [0,0,0,0]
+            corDifferenceToBody= [0,0,0,0]
 
-        print([corDistanceToWall_lst, corDistanceToFood_lst, corDistanceToBody])
+        print([corDifferenceToWall_lst, corDifferenceToFood_lst, corDifferenceToBody])
 
         return [corDistanceToWall_lst, corDistanceToFood_lst, corDistanceToBody]
 

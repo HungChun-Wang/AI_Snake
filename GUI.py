@@ -66,44 +66,45 @@ class CGUI:
         wallBoundary = self.__referee.getWallBoundary()
         FoodPos = self.__referee.getFoodPos()
 
-        distanceToWall_lst = [snakeHeadPos.y+1, 
+        distanceToWall_lst = [snakeHeadPos.y-wallBoundary.lower, 
                               wallBoundary.upper-snakeHeadPos.y+1, 
-                              snakeHeadPos.x+1, 
+                              snakeHeadPos.x+1-wallBoundary.left, 
                               wallBoundary.right-snakeHeadPos.x+1]
-        DistanceToFood_lst = [abs(snakeHeadPos.x-FoodPos.x), abs(snakeHeadPos.y-FoodPos.y)]
+
+        distanceToFood_lst = [snakeHeadPos.x-FoodPos.x, snakeHeadPos.y-FoodPos.y]
 
         if len(snakeBodyPos)>1:
-            upper_dist_lst = [snakeHeadPos.y - i.y for i in snakeBodyPos[0:-1] if snakeHeadPos.y - i.y >= 0 ]
+            upper_dist_lst = [snakeHeadPos.y - i.y for i in snakeBodyPos[0:-1] if snakeHeadPos.y - i.y >= 0 and snakeHeadPos.x == i.x]
             if len(upper_dist_lst)>0:
                 upper_dist = sorted(upper_dist_lst)[0]
             else:
                 upper_dist = 0
 
-            lower_dist_lst = [i.y - snakeHeadPos.y for i in snakeBodyPos[0:-1] if i.y - snakeHeadPos.y >= 0 ]
+            lower_dist_lst = [i.y - snakeHeadPos.y for i in snakeBodyPos[0:-1] if i.y - snakeHeadPos.y >= 0 and snakeHeadPos.x == i.x]
             if len(lower_dist_lst)>0:
                 lower_dist = sorted(lower_dist_lst)[0]
             else:
                 lower_dist = 0
 
-            left_dist_lst = [snakeHeadPos.x - i.x for i in snakeBodyPos[0:-1] if snakeHeadPos.x - i.x >= 0 ]
+            left_dist_lst = [snakeHeadPos.x - i.x for i in snakeBodyPos[0:-1] if snakeHeadPos.x - i.x >= 0 and snakeHeadPos.y == i.y]
             if len(left_dist_lst)>0:
                 left_dist = sorted(left_dist_lst)[0]
             else:
                 left_dist = 0
 
-            right_dist_lst = [i.x - snakeHeadPos.x for i in snakeBodyPos[0:-1] if i.x - snakeHeadPos.x >= 0 ]
+            right_dist_lst = [i.x - snakeHeadPos.x for i in snakeBodyPos[0:-1] if i.x - snakeHeadPos.x >= 0 and snakeHeadPos.y == i.y]
             if len(right_dist_lst)>0:
                 right_dist = sorted(right_dist_lst)[0]
             else:
                 right_dist = 0
 
-            DistanceToBody = [upper_dist, lower_dist, left_dist, right_dist]
+            distanceToBody = [upper_dist, lower_dist, left_dist, right_dist]
         else:
-            DistanceToBody= [0,0,0,0]
+            distanceToBody= [0,0,0,0]
 
-        print([distanceToWall_lst, DistanceToFood_lst, DistanceToBody])
+        print([distanceToWall_lst, distanceToFood_lst, distanceToBody])
 
-        return [distanceToWall_lst, DistanceToFood_lst, DistanceToBody]
+        return [distanceToWall_lst, distanceToFood_lst, distanceToBody]
 
     # draw snake on window
     def __drawSnake( self ):

@@ -66,12 +66,12 @@ class CGUI:
         wallBoundary = self.__referee.getWallBoundary()
         FoodPos = self.__referee.getFoodPos()
 
-        distanceToWall_lst = [snakeHeadPos.y-wallBoundary.lower, 
+        corDistanceToWall_lst = [snakeHeadPos.y-wallBoundary.lower, 
                               wallBoundary.upper-snakeHeadPos.y+1, 
                               snakeHeadPos.x+1-wallBoundary.left, 
                               wallBoundary.right-snakeHeadPos.x+1]
 
-        distanceToFood_lst = [snakeHeadPos.x-FoodPos.x, snakeHeadPos.y-FoodPos.y]
+        corDistanceToFood_lst = [snakeHeadPos.x-FoodPos.x, snakeHeadPos.y-FoodPos.y]
 
         if len(snakeBodyPos)>1:
             upper_dist_lst = [snakeHeadPos.y - i.y for i in snakeBodyPos[0:-1] if snakeHeadPos.y - i.y >= 0 and snakeHeadPos.x == i.x]
@@ -98,13 +98,13 @@ class CGUI:
             else:
                 right_dist = 0
 
-            distanceToBody = [upper_dist, lower_dist, left_dist, right_dist]
+            corDistanceToBody = [upper_dist, lower_dist, left_dist, right_dist]
         else:
-            distanceToBody= [0,0,0,0]
+            corDistanceToBody= [0,0,0,0]
 
-        print([distanceToWall_lst, distanceToFood_lst, distanceToBody])
+        print([corDistanceToWall_lst, corDistanceToFood_lst, corDistanceToBody])
 
-        return [distanceToWall_lst, distanceToFood_lst, distanceToBody]
+        return [corDistanceToWall_lst, corDistanceToFood_lst, corDistanceToBody]
 
     # draw snake on window
     def __drawSnake( self ):

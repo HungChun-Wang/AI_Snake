@@ -39,7 +39,7 @@ class CReferee:
 
         fieldnames = [ 'Upper Barrier Dist', 'Lower Barrier Dist', \
                         'Left Barrier Dist', 'Right Barrier Dist', \
-                        'X Diff', 'Y Diff', 'Reward' ]
+                        'X Diff', 'Y Diff', 'Move Direction', 'Reward' ]
 
         # record data
         self.__dataRecorder = CDataRecorder( 'SnakeData.csv' , fieldnames )
@@ -230,4 +230,5 @@ class CReferee:
         coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
 
         # write data to file
-        self.__dataRecorder.holdData( minDistToBarrier, coorDiffToFood, self.__snake.getReward() )
+        self.__dataRecorder.holdData( minDistToBarrier, coorDiffToFood, \
+                                        self.__snake.getMoveDir(), self.__snake.getReward() )

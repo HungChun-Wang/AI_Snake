@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 from dataclasses import dataclass
 
 # coordinate structure
@@ -8,7 +8,7 @@ class TCoor:
     y: int
 
 # direction type
-class direction( Enum ):
+class direction( IntEnum ):
     none = 0
     up = 1
     down = 2

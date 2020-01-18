@@ -26,11 +26,11 @@ class CDataRecorder:
         self.__data = []
 
     # save data temporary
-    def holdData( self, minDistToBarrier, coorDiffToFood, reward ):
+    def holdData( self, minDistToBarrier, coorDiffToFood, action, reward ):
         # reshape data
         dataRow = [ minDistToBarrier.up, minDistToBarrier.down, \
             minDistToBarrier.left, minDistToBarrier.right, \
-            coorDiffToFood.x, coorDiffToFood.y, int( reward ) ]
+            coorDiffToFood.x, coorDiffToFood.y, int( action ), int( reward ) ]
         
         # append to data list
         self.__data.append( dataRow )

@@ -28,9 +28,20 @@ class CSnake:
         # accumulated step number
         self.__stepAcc = 0
 
+        # reward for Q learning
+        self.__reward = 0
+
     # set snake move direction
     def setMoveDir( self, dir ):
         self.__moveDir = dir
+
+    # set reward for Q learning
+    def setReward( self, reward ):
+        self.__reward = reward
+
+    # get snake move direction
+    def getMoveDir( self ):
+        return self.__moveDir
 
     # get position of snake head
     def getHeadPos( self ):
@@ -51,6 +62,9 @@ class CSnake:
     # get accumulated step number
     def getStepAcc( self ):
         return self.__stepAcc
+
+    def getReward( self ):
+        return self.__reward
 
     # add body from tail
     def growUp( self ):

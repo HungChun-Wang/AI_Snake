@@ -16,28 +16,43 @@ class TDataRecord:
     stepAcc: int
 
 class CDataRecorder:
+    def __init__( self, fileName, fieldName ):
+        # the name of written file
+        self.__fileName = fileName
+
+        # field name of data
+        self.__fieldName = fieldName
+
+        self.__data = []
+
+    # save data temporary
+    def holdData( self, minDistToBarrier, coorDiffToFood, reward ):
+        # reshape data
+        dataRow = [ minDistToBarrier.up, minDistToBarrier.down, \
+            minDistToBarrier.left, minDistToBarrier.right, \
+            coorDiffToFood.x, coorDiffToFood.y, int( reward ) ]
+        
+        # append to data list
+        self.__data.append( dataRow )
+
     # write data to file
-    def writeData( self, minDistToBarrier, coorDiffToFood, roundStep, StepAcc ):
+    def writeData( self ):
         # whether file exists
         isFileExist = False
-        if os.path.isfile( 'SnakeData.csv' ):
+        if os.path.isfile( self.__fileName ):
             isFileExist = True
 
         # write data to file
-        with open( 'SnakeData.csv', 'a', newline = '' ) as csvFile:
+        with open( self.__fileName, 'a', newline = '' ) as csvFile:
             fWrite = csv.writer( csvFile, delimiter=',' )
 
             # write title when create file
             if isFileExist == False:
-                fieldnames = [ 'Upper Barrier Dist', 'Lower Barrier Dist', \
-                            'Left Barrier Dist', 'Right Barrier Dist', \
-                            'X Diff', 'Y Diff', 'Round Step', 'Total Step' ]
-                fWrite.writerow( fieldnames )
+                fWrite.writerow( self.__fieldName )
 
             # write data
-            data = [ minDistToBarrier.up, minDistToBarrier.down, \
-                     minDistToBarrier.left, minDistToBarrier.right, \
-                     coorDiffToFood.x, coorDiffToFood.y, roundStep, StepAcc ]
-            fWrite.writerow( data )
+            for i in range( len( self.__data ) ):
+                fWrite.writerow( self.__data[ i ] )
 
-        
+            # clear hold data
+            self.__data.clear()

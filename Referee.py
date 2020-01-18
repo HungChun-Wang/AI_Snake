@@ -1,6 +1,6 @@
 from CommonDefine import TCoor
 from CommonDefine import direction
-from enum import Enum
+from enum import IntEnum
 from Snake import CSnake
 from Food import CFood
 from Wall import CWall
@@ -9,10 +9,15 @@ from DataRecorder import CDataRecorder
 from DataRecorder import TOrientalDist
 
 # game state type
-class EGameState( Enum ):
+class EGameState( IntEnum ):
     ready = 0
     running = 1
     over = 2
+
+class EReward( IntEnum ):
+    none = 0
+    eat = 10
+    die = -10
 
 class CReferee:
 
@@ -32,8 +37,12 @@ class CReferee:
         # state of game
         self.__gameState = EGameState.ready
 
+        fieldnames = [ 'Upper Barrier Dist', 'Lower Barrier Dist', \
+                        'Left Barrier Dist', 'Right Barrier Dist', \
+                        'X Diff', 'Y Diff', 'Reward' ]
+
         # record data
-        self.__dataRecorder = CDataRecorder()
+        self.__dataRecorder = CDataRecorder( 'SnakeData.csv' , fieldnames )
 
     # start game
     def start( self ):
@@ -128,29 +137,38 @@ class CReferee:
 
     # do process which need to do every tick
     def roundTask( self ):
+        if self.__snake.getMoveDir() == direction.none:
+            return
+
         # snake move command
         self.__snake.move()
-        
+
         # game over when snake bite itself
         if self.__snake.isBite() or self.IsSnakeCrash():
+            # give reward of die
+            self.__snake.setReward( EReward.die )
 
-            # calculate distance to closed barrier in four orientaion
-            minDistToBarrier = self.calcMinDistToBarrier( self.__snake.getBodyPos(), \
-                        self.__snake.getBodyLength(), self.__wall.getBoundary() )
-            
-            # calculate coordinate different between snake head and food
-            coorDiffToFood = self.calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
-            
+            # hold data for training snake
+            self.__holdData()
+
             # write data to file
-            self.__dataRecorder.writeData( minDistToBarrier, coorDiffToFood, \
-                        self.__snake.getRoundStep(), self.__snake.getStepAcc() )
-            
+            self.__dataRecorder.writeData()
+
             # switch game state to over
             self.__gameState = EGameState.over
             return
 
         # end one round when snake get food
         if self.isSnakeEating():
+            # give reward of eating
+            self.__snake.setReward( EReward.eat )
+
+            # hold data for training snake
+            self.__holdData()
+
+            # write data to file
+            self.__dataRecorder.writeData()
+
             # add snake body
             self.__snake.growUp()
 
@@ -158,8 +176,14 @@ class CReferee:
             self.createFood()
             return
 
+        # reset reward
+        self.__snake.setReward( EReward.none )
+
+        # hold data for training snake
+        self.__holdData()
+
     # calculate distance to closed barrier in four orientaion
-    def calcMinDistToBarrier( self, snakeBody, snakeLength, wallBoundary ):
+    def __calcMinDistToBarrier( self, snakeBody, snakeLength, wallBoundary ):
         # init list
         upperList = [ wallBoundary.upper - snakeBody[ snakeLength - 1 ].y + 1 ]
         lowerList = [ snakeBody[ snakeLength - 1 ].y - wallBoundary.lower + 1 ]
@@ -168,35 +192,42 @@ class CReferee:
 
         # traversal body list to find minimum distance of four orientation
         for i in range( snakeLength - 1 ):
-            if( snakeBody[ snakeLength - 1 ].x == snakeBody[ i ].x ):
+            if snakeBody[ snakeLength - 1 ].x == snakeBody[ i ].x:
                 # find upper-closet body
-                if( snakeBody[ snakeLength - 1 ].y < snakeBody[ i ].y ):
+                if snakeBody[ snakeLength - 1 ].y < snakeBody[ i ].y:
                     upperList.append( snakeBody[ i ].y - snakeBody[ snakeLength - 1 ].y )
-
                 # find lower-closet body
-                elif( snakeBody[ snakeLength - 1 ].y > snakeBody[ i ].y ):
+                elif snakeBody[ snakeLength - 1 ].y > snakeBody[ i ].y:
                     lowerList.append( snakeBody[ snakeLength - 1 ].y - snakeBody[ i ].y )
-                
                 # exception
                 else:
                     assert( False )
             
-            if( snakeBody[ snakeLength - 1 ].y == snakeBody[ i ].y ):
+            if snakeBody[ snakeLength - 1 ].y == snakeBody[ i ].y:
                 # find left-closet body
-                if( snakeBody[ snakeLength - 1 ].x > snakeBody[ i ].x ):
+                if snakeBody[ snakeLength - 1 ].x > snakeBody[ i ].x:
                     leftList.append( snakeBody[ i ].x - snakeBody[ snakeLength - 1 ].x )
-
                 # find right-closet body
-                elif( snakeBody[ snakeLength - 1 ].x < snakeBody[ i ].x ):
+                elif snakeBody[ snakeLength - 1 ].x < snakeBody[ i ].x:
                     rightList.append( snakeBody[ snakeLength - 1 ].x - snakeBody[ i ].x )
-
                 # exception
                 else:
                     assert( False )
-    
+                    
         return TOrientalDist( min( upperList ), min( lowerList ), min( leftList ), min( rightList ) )
 
     # calculate coordinate different between snake head and food
-    def calcCoorDiffToFood( self, snakeHead, foodPos ):
+    def __calcCoorDiffToFood( self, snakeHead, foodPos ):
         coorDiff = TCoor( snakeHead.x - foodPos.x, snakeHead.y - foodPos.y )
         return coorDiff
+
+    def __holdData( self ):
+        # calculate distance to closed barrier in four orientaion
+        minDistToBarrier = self.__calcMinDistToBarrier( self.__snake.getBodyPos(), \
+                    self.__snake.getBodyLength(), self.__wall.getBoundary() )
+        
+        # calculate coordinate different between snake head and food
+        coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
+
+        # write data to file
+        self.__dataRecorder.holdData( minDistToBarrier, coorDiffToFood, self.__snake.getReward() )

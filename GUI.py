@@ -1,6 +1,7 @@
 import sys
 import time
 import pygame
+from enum import IntEnum
 from CommonDefine import direction
 from pygame.locals import K_UP
 from pygame.locals import K_DOWN
@@ -9,8 +10,11 @@ from pygame.locals import K_RIGHT
 from pygame.locals import KEYDOWN
 from pygame.locals import QUIT
 from pygame.locals import K_RETURN
+from pygame.locals import K_RSHIFT
+from pygame.locals import K_RCTRL
 from Referee import CReferee
 from Referee import EGameState
+from AutoCommander import CAutoCommander
 
 Screen_Width = 600
 Screen_Height = 480
@@ -20,6 +24,10 @@ White_Color = pygame.Color( 255, 255, 255 )
 Red_Color = pygame.Color( 255, 0, 0 )
 Background_Color = pygame.Color( 40, 40, 60 )
 
+class EGUIState( IntEnum ):
+    mainMenu = 0
+    game = 1
+
 class CGUI:
     def __init__( self ):
         # init game
@@ -28,25 +36,40 @@ class CGUI:
         # set window title
         pygame.display.set_caption( 'Snake' )
 
+        # game type
+        self.__State = EGUIState.mainMenu
+
         # set window size
         self.__screen = pygame.display.set_mode( ( Screen_Width, Screen_Height ) )
 
         # configure referee
         self.__referee = CReferee( Screen_Width / Unit_Size, Screen_Height / Unit_Size )
 
+        # auto commander
+        self.__autoCommander = None
+
     def start( self ):
         while True:
-            # print start scrrean
-            self.printInitScreen()
+            # main menu screen
+            if self.__State == EGUIState.mainMenu:
+                # print start scrrean
+                self.__printInitScreen()
 
-            # wait start key
-            self.__startKeyInstruct()
+                # wait start key
+                self.__startKeyInstruct()
 
-            # wait for time interval
-            time.sleep( Time_Interval )
+            # game screen
+            elif self.__State == EGUIState.game:
+                # back to main menu when game over
+                if self.__referee.getGameState() == EGameState.over:
+                    self.__State = EGUIState.mainMenu
+                    continue
 
-            # run game except game over
-            while self.__referee.getGameState() == EGameState.running:
+                if self.__autoCommander != None:
+                    envState = self.__referee.getEnvState()
+                    cmd = self.__autoCommander.decideCmd( envState )
+                    self.__putCmd( cmd )
+
                 # receive keyboard instruction
                 self.__ctrlKeyInstruct()
 
@@ -54,10 +77,10 @@ class CGUI:
                 self.__referee.roundTask()
 
                 # print all element and update screen
-                self.printGamingScreen()
+                self.__printGamingScreen()
 
-                # wait for time interval
-                time.sleep( Time_Interval )
+            # wait for time interval
+            time.sleep( Time_Interval )
 
     # draw snake on window
     def __drawSnake( self ):
@@ -90,9 +113,16 @@ class CGUI:
             if event.type != KEYDOWN:
                 return
 
-            # set move direction accroding to key
+            # start manual game
             if event.key == K_RETURN:
                 self.__referee.start()
+                self.__State = EGUIState.game
+
+            # start auto game
+            elif event.key == K_RSHIFT:
+                self.__referee.start()
+                self.__autoCommander = CAutoCommander()
+                self.__State = EGUIState.game
 
     # deal with keyboard instruction
     def __ctrlKeyInstruct( self ):
@@ -114,7 +144,7 @@ class CGUI:
                 self.__referee.setSnakeMoveDir( direction.right )
 
     # print beginning screen
-    def printInitScreen( self ):
+    def __printInitScreen( self ):
         # print message in center of screen
         font = pygame.font.Font( None, 72 )
         content = "Press Enter"
@@ -126,7 +156,7 @@ class CGUI:
         pygame.display.update()
 
     # print all element and update screen
-    def printGamingScreen( self ):
+    def __printGamingScreen( self ):
         # reflash background color
         self.__screen.fill( Background_Color )
 
@@ -143,3 +173,8 @@ class CGUI:
 
         # update scrren
         pygame.display.update()
+
+    # put command
+    def __putCmd( self, cmd ):
+        # set move direction accroding to key
+        self.__referee.setSnakeMoveDir( cmd )

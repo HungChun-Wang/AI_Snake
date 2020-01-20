@@ -1,6 +1,7 @@
 from CommonDefine import TCoor
 from CommonDefine import direction
 from enum import IntEnum
+import numpy as np
 from Snake import CSnake
 from Food import CFood
 from Wall import CWall
@@ -37,6 +38,12 @@ class CReferee:
         # state of game
         self.__gameState = EGameState.ready
 
+        # minimal distance from snake head to body or wall in four orientation
+        self.__minDistToBarrier = None
+
+        # coordinate different between snake head and food
+        self.__coorDiffToFood = None
+
         fieldnames = [ 'Upper Barrier Dist', 'Lower Barrier Dist', \
                         'Left Barrier Dist', 'Right Barrier Dist', \
                         'X Diff', 'Y Diff', 'Move Direction', 'Reward' ]
@@ -57,6 +64,13 @@ class CReferee:
 
         # switch game state to running
         self.__gameState = EGameState.running
+
+        # calculate distance to closed barrier in four orientaion
+        self.__minDistToBarrier = self.__calcMinDistToBarrier( self.__snake.getBodyPos(), \
+                    self.__snake.getBodyLength(), self.__wall.getBoundary() )
+        
+        # calculate coordinate different between snake head and food
+        self.__coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
 
     # create food without overlapping
     def createFood( self ):
@@ -91,6 +105,20 @@ class CReferee:
     # get state of game
     def getGameState( self ):
         return self.__gameState
+
+    # get environment state
+    def getEnvState( self ):
+        # arrange state parameter
+        envState = np.array(
+            [ self.__minDistToBarrier.up, self.__minDistToBarrier.down, \
+            self.__minDistToBarrier.left, self.__minDistToBarrier.right, \
+            self.__coorDiffToFood.x, self.__coorDiffToFood.y ], \
+            dtype = 'float32' )
+
+        # reshape to 2D array
+        envState = np.reshape( envState, ( 1, 6 ) )
+        
+        return envState
 
     # set move Direction of snake
     def setSnakeMoveDir( self, dir ):
@@ -223,12 +251,12 @@ class CReferee:
 
     def __holdData( self ):
         # calculate distance to closed barrier in four orientaion
-        minDistToBarrier = self.__calcMinDistToBarrier( self.__snake.getBodyPos(), \
+        self.__minDistToBarrier = self.__calcMinDistToBarrier( self.__snake.getBodyPos(), \
                     self.__snake.getBodyLength(), self.__wall.getBoundary() )
         
         # calculate coordinate different between snake head and food
-        coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
+        self.__coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
 
         # write data to file
-        self.__dataRecorder.holdData( minDistToBarrier, coorDiffToFood, \
+        self.__dataRecorder.holdData( self.__minDistToBarrier, self.__coorDiffToFood, \
                                         self.__snake.getMoveDir(), self.__snake.getReward() )

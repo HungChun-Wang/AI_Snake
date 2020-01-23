@@ -7,8 +7,8 @@ class CSnake:
 
     def __init__( self, actRange ):
         # randomly decide start position
-        initPos = TCoor( random.randint( actRange.lower, actRange.upper ) \
-                        , random.randint( actRange.left, actRange.right ) )
+        initPos = TCoor( random.randint( actRange.left, actRange.right ) \
+                        , random.randint( actRange.lower, actRange.upper ) )
 
         # list for body location
         self.__bodyList = []

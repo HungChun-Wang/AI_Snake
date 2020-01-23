@@ -25,6 +25,13 @@ class CDataRecorder:
 
         self.__data = []
 
+    def getData( self ):
+        return self.__data
+
+    def clearData( self ):
+        # clear hold data
+        self.__data.clear()
+
     # save data temporary
     def holdData( self, minDistToBarrier, coorDiffToFood, action, reward ):
         # reshape data
@@ -53,6 +60,3 @@ class CDataRecorder:
             # write data
             for i in range( len( self.__data ) ):
                 fWrite.writerow( self.__data[ i ] )
-
-            # clear hold data
-            self.__data.clear()

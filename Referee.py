@@ -9,6 +9,8 @@ from Wall import TBoundary
 from DataRecorder import CDataRecorder
 from DataRecorder import TOrientalDist
 
+Max_Round_Step = 1000
+
 # game state type
 class EGameState( IntEnum ):
     ready = 0
@@ -17,8 +19,10 @@ class EGameState( IntEnum ):
 
 class EReward( IntEnum ):
     none = 0
-    eat = 10
-    die = -10
+    moveFarther = -0.001
+    moveCloser = 0.001
+    eat = 1
+    die = -0.1
 
 class CReferee:
 
@@ -32,8 +36,14 @@ class CReferee:
         # targer food
         self.__food = None
 
+        # maximal number of eaten food
+        self.__maxFoodNum = 0
+
         # total num of eaten food
         self.__foodNum = 0
+
+        # total round number
+        self.__roundNum = 0
 
         # state of game
         self.__gameState = EGameState.ready
@@ -53,6 +63,9 @@ class CReferee:
 
     # start game
     def start( self ):
+        # add round numer
+        self.__roundNum += 1
+
         # configure snake
         self.__snake = CSnake( self.__wall.getBoundary() )
 
@@ -65,12 +78,21 @@ class CReferee:
         # switch game state to running
         self.__gameState = EGameState.running
 
+        # distance from snake head to food in last tick
+        self.__lastDist = float('inf')
+
+        # current distance from snake head to food
+        self.__dist = 0.0
+
         # calculate distance to closed barrier in four orientaion
         self.__minDistToBarrier = self.__calcMinDistToBarrier( self.__snake.getBodyPos(), \
                     self.__snake.getBodyLength(), self.__wall.getBoundary() )
         
         # calculate coordinate different between snake head and food
-        self.__coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
+        self.__coorDiffToFood = self.__calcCoorDiff( self.__snake.getHeadPos(), self.__food.getPos() )
+
+        # reset data in memory
+        self.__dataRecorder.clearData()
 
     # create food without overlapping
     def createFood( self ):
@@ -99,12 +121,20 @@ class CReferee:
                 break
 
     # get total num of eaten food
+    def getMaxFoodNum( self ):
+        return self.__maxFoodNum
+
+    # get total num of eaten food
     def getFoodNum( self ):
         return self.__foodNum
 
     # get state of game
     def getGameState( self ):
         return self.__gameState
+
+    # get total round number
+    def getRoundNum( self ):
+        return self.__roundNum
 
     # get environment state
     def getEnvState( self ):
@@ -124,6 +154,27 @@ class CReferee:
     def setSnakeMoveDir( self, dir ):
         self.__snake.setMoveDir( dir )
 
+    def __setMaxFoodNum( self ):
+        if self.__maxFoodNum < self.__foodNum:
+            self.__maxFoodNum = self.__foodNum
+
+    def __setReward( self ):
+        # penalty for die
+        if self.__snake.isBite() or self.isSnakeCrash():
+            self.__snake.setReward( EReward.die )
+        # reward for eating food
+        elif self.isSnakeEating():
+            self.__snake.setReward( EReward.eat )
+        # reward for moving closer
+        elif self.__isSnakeCloser():
+            self.__snake.setReward( EReward.moveCloser )
+        # penalty for moving farther
+        elif self.__isSnakeCloser() == False:
+            self.__snake.setReward( EReward.moveFarther )
+        # no reward
+        else:
+            self.__snake.setReward( EReward.none )
+
     # get whole body list of snake
     def getSnakeBody( self ):
         return self.__snake.getBodyPos()
@@ -140,14 +191,16 @@ class CReferee:
     def getFoodPos( self ):
         return self.__food.getPos()
 
+    def getData( self ):
+        return self.__dataRecorder.getData()
+
     # whether snake head and food overlap
     def isSnakeEating( self ):
         if self.__snake.getHeadPos() == self.__food.getPos():
-            self.__foodNum = self.__foodNum + 1
             return True
 
     # whether snake head out of boundary
-    def IsSnakeCrash( self ):
+    def isSnakeCrash( self ):
         # get head position
         snakeHead = self.__snake.getHeadPos()
 
@@ -163,24 +216,39 @@ class CReferee:
 
         return False
 
+    def __isSnakeCloser( self ):
+        if self.__dist < self.__lastDist:
+            return True
+        else:
+            return False
+
+    def __isRoundStepExceed( self ):
+        return self.__snake.getRoundStep() > Max_Round_Step
+
     # do process which need to do every tick
-    def roundTask( self ):
+    def tickTask( self ):
         if self.__snake.getMoveDir() == direction.none:
             return
 
         # snake move command
         self.__snake.move()
 
-        # game over when snake bite itself
-        if self.__snake.isBite() or self.IsSnakeCrash():
-            # give reward of die
-            self.__snake.setReward( EReward.die )
+        # calculate distance from snake head to food
+        self.__dist = self.__calcDist( self.__snake.getHeadPos(), self.__food.getPos() )
 
+        # set reward
+        self.__setReward()
+
+        # game over when snake bite itself
+        if self.__snake.isBite() or self.isSnakeCrash():
             # hold data for training snake
             self.__holdData()
 
             # write data to file
             self.__dataRecorder.writeData()
+
+            # set maximal food number
+            self.__setMaxFoodNum()
 
             # switch game state to over
             self.__gameState = EGameState.over
@@ -188,8 +256,8 @@ class CReferee:
 
         # end one round when snake get food
         if self.isSnakeEating():
-            # give reward of eating
-            self.__snake.setReward( EReward.eat )
+            # add foodNum
+            self.__foodNum = self.__foodNum + 1
 
             # hold data for training snake
             self.__holdData()
@@ -204,11 +272,25 @@ class CReferee:
             self.createFood()
             return
 
-        # reset reward
-        self.__snake.setReward( EReward.none )
+        if self.__isRoundStepExceed():
+            # hold data for training snake
+            self.__holdData()
+
+            # write data to file
+            self.__dataRecorder.writeData()
+
+            # set maximal food number
+            self.__setMaxFoodNum()
+
+            # switch game state to over
+            self.__gameState = EGameState.over
+            return
 
         # hold data for training snake
         self.__holdData()
+
+        # update last distance
+        self.__lastDist = self.__dist
 
     # calculate distance to closed barrier in four orientaion
     def __calcMinDistToBarrier( self, snakeBody, snakeLength, wallBoundary ):
@@ -225,29 +307,27 @@ class CReferee:
                 if snakeBody[ snakeLength - 1 ].y < snakeBody[ i ].y:
                     upperList.append( snakeBody[ i ].y - snakeBody[ snakeLength - 1 ].y )
                 # find lower-closet body
-                elif snakeBody[ snakeLength - 1 ].y > snakeBody[ i ].y:
+                elif snakeBody[ snakeLength - 1 ].y >= snakeBody[ i ].y:
                     lowerList.append( snakeBody[ snakeLength - 1 ].y - snakeBody[ i ].y )
-                # exception
-                else:
-                    assert( False )
             
             if snakeBody[ snakeLength - 1 ].y == snakeBody[ i ].y:
                 # find left-closet body
                 if snakeBody[ snakeLength - 1 ].x > snakeBody[ i ].x:
                     leftList.append( snakeBody[ i ].x - snakeBody[ snakeLength - 1 ].x )
                 # find right-closet body
-                elif snakeBody[ snakeLength - 1 ].x < snakeBody[ i ].x:
+                elif snakeBody[ snakeLength - 1 ].x <= snakeBody[ i ].x:
                     rightList.append( snakeBody[ snakeLength - 1 ].x - snakeBody[ i ].x )
-                # exception
-                else:
-                    assert( False )
                     
         return TOrientalDist( min( upperList ), min( lowerList ), min( leftList ), min( rightList ) )
 
-    # calculate coordinate different between snake head and food
-    def __calcCoorDiffToFood( self, snakeHead, foodPos ):
-        coorDiff = TCoor( snakeHead.x - foodPos.x, snakeHead.y - foodPos.y )
+    # calculate coordinate different between two point
+    def __calcCoorDiff( self, P1, P2 ):
+        coorDiff = TCoor( P1.x - P2.x, P1.y - P2.y )
         return coorDiff
+
+    # calculate the distance between two point
+    def __calcDist( self, P1, P2 ):
+        return ( ( P1.x - P2.x )**2 + ( P1.y - P2.y )**2 )**0.5
 
     def __holdData( self ):
         # calculate distance to closed barrier in four orientaion
@@ -255,7 +335,7 @@ class CReferee:
                     self.__snake.getBodyLength(), self.__wall.getBoundary() )
         
         # calculate coordinate different between snake head and food
-        self.__coorDiffToFood = self.__calcCoorDiffToFood( self.__snake.getHeadPos(), self.__food.getPos() )
+        self.__coorDiffToFood = self.__calcCoorDiff( self.__snake.getHeadPos(), self.__food.getPos() )
 
         # write data to file
         self.__dataRecorder.holdData( self.__minDistToBarrier, self.__coorDiffToFood, \

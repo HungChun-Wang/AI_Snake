@@ -2,7 +2,7 @@ from GUI import CGUI
 
 def main():
     GUI = CGUI()
-    GUI.start()
+    GUI.tickTask()
     return
 
 if __name__ == '__main__':

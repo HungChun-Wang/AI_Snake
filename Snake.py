@@ -1,7 +1,7 @@
 import random
-from CommonDefine import direction
+from enum import IntEnum
 from CommonDefine import TCoor
-from dataclasses import dataclass
+from CommonDefine import EDirection
 
 class CSnake:
 
@@ -20,7 +20,7 @@ class CSnake:
         self.__bodyLength = 1
 
         # move direction
-        self.__moveDir = direction.none
+        self.__moveDir = EDirection.none
 
         # step number of single round
         self.__roundStep = 0
@@ -29,10 +29,11 @@ class CSnake:
         self.__stepAcc = 0
 
         # reward for Q learning
-        self.__reward = 0
+        self.__reward = 0.0
 
     # set snake move direction
     def setMoveDir( self, dir ):
+        # set move direction
         self.__moveDir = dir
 
     # set reward for Q learning
@@ -66,6 +67,29 @@ class CSnake:
     def getReward( self ):
         return self.__reward
 
+    # get coordinate after move
+    def calcMoveCoord( self, moveDir ):
+        # body length should large than zero
+        assert( self.__bodyLength > 0 )
+
+        # get head position
+        headPos = self.__bodyList[ self.__bodyLength - 1 ]
+
+        # configure new body node
+        headPos = TCoor( headPos.x, headPos.y )
+
+        # find position according to move direction
+        if moveDir == EDirection.up:
+            headPos.y = headPos.y - 1
+        elif moveDir == EDirection.down:
+            headPos.y = headPos.y + 1
+        elif moveDir == EDirection.left:
+            headPos.x = headPos.x - 1
+        elif moveDir == EDirection.right:
+            headPos.x = headPos.x + 1
+            
+        return headPos
+
     # add body from tail
     def growUp( self ):
         # body length should not be zero
@@ -88,29 +112,11 @@ class CSnake:
 
     # snake move front
     def move( self ):
-        # body length should not be zero
-        assert( self.__bodyLength != 0 )
-
-        # get head position
-        bodyPos = self.__bodyList[ self.__bodyLength - 1 ]
-
-        # configure new body node
-        bodyPos = TCoor( bodyPos.x, bodyPos.y )
-
-        # find new position according to move direction
-        if self.__moveDir == direction.up:
-            bodyPos.y = bodyPos.y - 1
-        elif self.__moveDir == direction.down:
-            bodyPos.y = bodyPos.y + 1
-        elif self.__moveDir == direction.left:
-            bodyPos.x = bodyPos.x - 1
-        elif self.__moveDir == direction.right:
-            bodyPos.x = bodyPos.x + 1
-        else:
-            return
+        # get coordinate after moving
+        headPos = self.calcMoveCoord( self.__moveDir )
 
         # remove tail and add new head
-        self.__bodyList.append( bodyPos )
+        self.__bodyList.append( headPos )
         self.__bodyList.pop( 0 )
 
         # accumulate step
@@ -118,9 +124,13 @@ class CSnake:
         self.__roundStep = self.__roundStep + 1
 
     # whether snake bite itself
-    def isBite( self ):
+    def isOnBody( self, pos ):
         # whether head and body overlap
         for i in range( self.__bodyLength - 1 ):
-            if self.__bodyList[ i ] == self.__bodyList[ self.__bodyLength - 1 ]:
+            if self.__bodyList[ i ] == pos:
                 return True
         return False
+
+    # whether snake bite itself
+    def isBite( self ):
+        return self.isOnBody( self.__bodyList[ self.__bodyLength - 1 ] )

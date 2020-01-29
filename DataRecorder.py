@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from CommonDefine import TCoor
 
 @dataclass
+class TActionResult:
+    up: bool
+    down: bool
+    left: bool
+    right: bool
+
+@dataclass
 class TOrientalDist:
     up: int
     down: int
@@ -23,7 +30,14 @@ class CDataRecorder:
         # field name of data
         self.__fieldName = fieldName
 
+        # hold data for training
         self.__data = []
+
+        # data for writing to file
+        self.__writeData = [] 
+
+        # max data number
+        self.__dataNum = 0
 
     def getData( self ):
         return self.__data
@@ -33,14 +47,20 @@ class CDataRecorder:
         self.__data.clear()
 
     # save data temporary
-    def holdData( self, minDistToBarrier, coorDiffToFood, action, reward ):
+    def holdData( self, envState, action, reward ):
+        if self.__dataNum > 5000:
+            self.__data.pop( 0 )
+
         # reshape data
-        dataRow = [ minDistToBarrier.up, minDistToBarrier.down, \
-            minDistToBarrier.left, minDistToBarrier.right, \
-            coorDiffToFood.x, coorDiffToFood.y, int( action ), int( reward ) ]
+        dataRow = envState[:]
+        dataRow.append( int( action ) )
+        dataRow.append( reward )
         
         # append to data list
         self.__data.append( dataRow )
+
+        # add data number
+        self.__dataNum += 1
 
     # write data to file
     def writeData( self ):
@@ -48,7 +68,7 @@ class CDataRecorder:
         isFileExist = False
         if os.path.isfile( self.__fileName ):
             isFileExist = True
-
+"""
         # write data to file
         with open( self.__fileName, 'a', newline = '' ) as csvFile:
             fWrite = csv.writer( csvFile, delimiter=',' )
@@ -60,3 +80,4 @@ class CDataRecorder:
             # write data
             for i in range( len( self.__data ) ):
                 fWrite.writerow( self.__data[ i ] )
+"""

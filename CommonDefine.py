@@ -8,7 +8,7 @@ class TCoor:
     y: int
 
 # direction type
-class direction( IntEnum ):
+class EDirection( IntEnum ):
     none = 0
     up = 1
     down = 2

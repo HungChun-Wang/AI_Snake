@@ -1,7 +1,8 @@
 import time
 import pygame
 from enum import IntEnum
-from CommonDefine import direction
+import numpy as np
+from CommonDefine import EDirection
 from pygame.locals import KEYDOWN
 from pygame.locals import QUIT
 from pygame.locals import K_UP
@@ -19,7 +20,7 @@ from AutoCommander import CAutoCommander
 
 Screen_Width = 600
 Screen_Height = 480
-Unit_Size = 20
+Unit_Size = 40
 White_Color = pygame.Color( 255, 255, 255 )
 Red_Color = pygame.Color( 255, 0, 0 )
 Background_Color = pygame.Color( 40, 40, 60 )
@@ -63,13 +64,10 @@ class CGUI:
                 self.__startKeyInstruct()
             # game screen
             elif self.__State == EGUIState.game:
-                # back to main menu when game over
-                if self.__referee.getGameState() == EGameState.over:
-                    self.__State = EGUIState.train
-                    continue
-
+                # play game automatically
                 if self.__autoCommander != None:
-                    envState = self.__referee.getEnvState()
+                    envState = np.asarray( self.__referee.getEnvState() )
+                    envState = np.reshape( envState, ( 1, 8 )  )
                     cmd = self.__autoCommander.decideCmd( envState )
                     self.__putCmd( cmd )
 
@@ -81,6 +79,11 @@ class CGUI:
 
                 # print all element and update screen
                 self.__printGamingScreen()
+
+                # back to main menu when game over
+                if self.__referee.getGameState() == EGameState.over:
+                    self.__State = EGUIState.train
+                    continue
             # wait training
             elif self.__State == EGUIState.train:
                 # back to main menu when game over
@@ -93,6 +96,7 @@ class CGUI:
 
                 # start next game
                 self.__referee.start()
+                self.__referee.initMoveDir()
                 self.__State = EGUIState.game
 
             # wait for time interval
@@ -136,6 +140,7 @@ class CGUI:
             # start auto game
             elif event.key == K_RSHIFT:
                 self.__referee.start()
+                self.__referee.initMoveDir()
                 self.__autoCommander = CAutoCommander()
                 self.__State = EGUIState.game
 
@@ -155,17 +160,25 @@ class CGUI:
 
             # set move direction accroding to key
             if event.key == K_UP:
-                self.__referee.setSnakeMoveDir( direction.up )
+                self.__referee.setMoveDir( EDirection.up )
             elif event.key == K_DOWN:
-                self.__referee.setSnakeMoveDir( direction.down )
+                self.__referee.setMoveDir( EDirection.down )
             elif event.key == K_LEFT:
-                self.__referee.setSnakeMoveDir( direction.left )
+                self.__referee.setMoveDir( EDirection.left )
             elif event.key == K_RIGHT:
-                self.__referee.setSnakeMoveDir( direction.right )
+                self.__referee.setMoveDir( EDirection.right )
+            
+            # adjust game speed
             elif event.key == K_LSHIFT:
                 self.timeInterval = 0.05
             elif event.key == K_LCTRL:
                 self.timeInterval = 0
+
+            # flag for training snake
+            elif event.key == K_RCTRL:
+                self.__autoCommander.setTrainFlag( False )
+            elif event.key == K_RSHIFT:
+                self.__autoCommander.setTrainFlag( True )
 
     # print beginning screen
     def __printInitScreen( self ):
@@ -189,13 +202,13 @@ class CGUI:
         font = pygame.font.Font( None, 18 )
 
         self.__screen.blit( font.render( f"Best: { self.__referee.getMaxFoodNum() }" \
-                            , True, White_Color ), ( 450, 10 ) )
+                            , True, White_Color ), ( 10, 10 ) )
         self.__screen.blit( font.render( f"Food: { self.__referee.getFoodNum() }" \
-                            , True, White_Color ), ( 450, 30 ) )
+                            , True, White_Color ), ( 10, 30 ) )
         self.__screen.blit( font.render( f"Round: { self.__referee.getRoundNum() }" \
-                            , True, White_Color ), ( 450, 50 ) )
+                            , True, White_Color ), ( 10, 50 ) )
         self.__screen.blit( font.render( f"Step: { self.__referee.getSnakeStepAcc() }" \
-                            , True, White_Color ), ( 450, 70 ) )
+                            , True, White_Color ), ( 10, 70 ) )
         # draw snake and food
         self.__drawSnake()
         self.__drawFood()
@@ -204,6 +217,6 @@ class CGUI:
         pygame.display.update()
 
     # put command
-    def __putCmd( self, cmd ):
+    def __putCmd( self, dir ):
         # set move direction accroding to key
-        self.__referee.setSnakeMoveDir( cmd )
+        self.__referee.setMoveDir( dir )
